@@ -341,6 +341,8 @@ pub enum IgvmVariableHeaderType {
     /// specified by a structure of type [`IGVM_VHS_PARAMETER`].
     #[cfg_attr(docsrs, doc(cfg(feature = "unstable")))]
     IGVM_VHT_ENVIRONMENT_INFO_PARAMETER = 0x313,
+    /// uefi direct kernel boot configuration
+    IGVM_VHT_UEFI_BOOT = 0x314,
 }
 
 /// The range of header types for platform structures.
@@ -1236,4 +1238,46 @@ pub enum VbsSigningAlgorithm {
     INVALID = 0x0,
     /// ECDSA P384.
     ECDSA_P384 = 0x1,
+}
+
+/// uefi direct kernel boot configuration
+///
+/// This points to a page where the firmware expects a list of
+/// IGVM_UEFI_BOOT_DATA_ENTRY structs.
+#[derive(IntoBytes, Immutable, KnownLayout, FromBytes, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct IGVM_VHT_UEFI_BOOT {
+    /// IGVM_UEFI_BOOT_DATA_ENTRY list address
+    pub boot_data_gpa: u64,
+}
+
+/// IGVM_UEFI_BOOT_DATA_ENTRY type
+#[open_enum]
+#[repr(u16)]
+#[derive(IntoBytes, Immutable, KnownLayout, FromBytes, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum IGVM_UEFI_BOOT_DATA_ENTRY_TYPE {
+    /// marks the end of the entry list
+    END_OF_LIST = 0,
+
+    /// entry is 'db' (in efi signature database format)
+    DB = 10,
+    /// entry is 'dbx' (in efi signature database format)
+    DBX = 11,
+
+    /// entry is an efi binary (for direct launch)
+    EFI_BINARY = 20,
+    /// entry is an iso image (load as ramdisk and use as boot media).
+    ISO_IMAGE = 21,
+}
+
+/// uefi boot data location
+#[repr(C)]
+#[derive(IntoBytes, Immutable, KnownLayout, FromBytes, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct IGVM_UEFI_BOOT_DATA_ENTRY {
+    /// boot data address
+    pub entry_gpa: u64,
+    /// boot data size
+    pub entry_size: u64,
+    /// boot data type
+    pub entry_type: IGVM_UEFI_BOOT_DATA_ENTRY_TYPE,
+    _padding: [u8; 6],
 }
